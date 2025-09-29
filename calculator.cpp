@@ -10,7 +10,57 @@ struct Leksema {
 
 };
 
-int getRang(char Ch) {
+long long multi(long long a, long long b) {
+
+    if (b == 0) {
+        return 0;
+    }
+
+    if (b & 1) {
+        return a + multi(a << 1, b >> 1);
+    } else {
+        return multi(a << 1, b >> 1);
+    }
+
+}
+
+long long diff(long long a, long long b) {
+
+    if (b == 0) {
+        return a;
+    }
+
+    long long d = a ^ b;
+    long long borrow = ((~a) & b) << 1;
+    return diff(d, borrow);
+}
+
+long long summ(long long a, long long b) {
+
+    if (b == 0) {
+        return a;
+    }
+    
+    long long s =  a ^ b;
+    long long carry = (a & b) << 1; 
+    return summ(s, carry);
+}
+
+long long divide(long long a, long long b) {
+
+    if (a < b) {
+        return 0;
+    }
+
+    long long temp = b, quotient = 1;
+    while (temp <= diff(a,temp)) {
+        temp <<= 1;
+        quotient <<= 1;
+    }
+    return quotient + divide(diff(a, temp), b);
+}
+
+long long getRang(char Ch) {
 
     if (Ch == '+' || Ch == '-') {
         return 1;
@@ -35,7 +85,7 @@ bool Maths(stack <Leksema> & Stack_for_numbers, stack <Leksema> & Stack_for_oper
         b = Stack_for_numbers.top().value;
         Stack_for_numbers.pop();
 
-        c = a + b;
+        c = summ(a, b);
         item.type = '0';
         item.value = c;
         Stack_for_numbers.push(item);
@@ -47,7 +97,7 @@ bool Maths(stack <Leksema> & Stack_for_numbers, stack <Leksema> & Stack_for_oper
         b = Stack_for_numbers.top().value;
         Stack_for_numbers.pop();
 
-        c = a - b;
+        c = diff(a, b);
         item.type = '0';
         item.value = c;
         Stack_for_numbers.push(item);
@@ -59,7 +109,7 @@ bool Maths(stack <Leksema> & Stack_for_numbers, stack <Leksema> & Stack_for_oper
         b = Stack_for_numbers.top().value;
         Stack_for_numbers.pop();
 
-        c = a * b;
+        c = multi(a, b);
         item.type = '0';
         item.value = c;
         Stack_for_numbers.push(item);
@@ -71,7 +121,7 @@ bool Maths(stack <Leksema> & Stack_for_numbers, stack <Leksema> & Stack_for_oper
         b = Stack_for_numbers.top().value;
         Stack_for_numbers.pop();
         if (a != 0) {
-            c = b / a;
+            c = divide(b, a);
             item.type = '0';
             item.value = c;
             Stack_for_numbers.push(item);
