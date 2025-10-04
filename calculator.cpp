@@ -10,62 +10,16 @@ struct Leksema {
 
 };
 
-long long multi(long long a, long long b) {
-
-    if (b == 0) {
-        return 0;
-    }
-
-    if (b & 1) {
-        return a + multi(a << 1, b >> 1);
-    } else {
-        return multi(a << 1, b >> 1);
-    }
-
-}
-
-long long diff(long long a, long long b) {
-
-    if (b == 0) {
-        return a;
-    }
-
-    long long d = a ^ b;
-    long long borrow = ((~a) & b) << 1;
-    return diff(d, borrow);
-}
-
-long long summ(long long a, long long b) {
-
-    if (b == 0) {
-        return a;
-    }
-    
-    long long s =  a ^ b;
-    long long carry = (a & b) << 1; 
-    return summ(s, carry);
-}
-
-long long divide(long long a, long long b) {
-
-    if (a < b) {
-        return 0;
-    }
-
-    long long temp = b, quotient = 1;
-    while (temp <= diff(a,temp)) {
-        temp <<= 1;
-        quotient <<= 1;
-    }
-    return quotient + divide(diff(a, temp), b);
-}
 
 long long getRang(char Ch) {
-
-    if (Ch == '+' || Ch == '-') {
+    if (Ch == '|') {
         return 1;
-    } else if (Ch == '*' || Ch == '/') {
+    } else if (Ch == '^') {
         return 2;
+    } else if (Ch == '&') {
+        return 3;
+    } else if (Ch == '~' || Ch == '!') {
+        return 4;
     } else {
         return 0;
     }
@@ -74,70 +28,72 @@ long long getRang(char Ch) {
 
 bool Maths(stack <Leksema> & Stack_for_numbers, stack <Leksema> & Stack_for_operations, Leksema& item) {
 
-    double a, b, c;
+    int a, b;
     a = Stack_for_numbers.top().value;
     Stack_for_numbers.pop();
 
     switch(Stack_for_operations.top().type) {
 
-        case '+':
+        case '~':
 
-        b = Stack_for_numbers.top().value;
-        Stack_for_numbers.pop();
-
-        c = summ(a, b);
+        a = ~a;
         item.type = '0';
-        item.value = c;
+        item.value = a;
         Stack_for_numbers.push(item);
         Stack_for_operations.pop();
         break;
        
-        case '-':
+        case '!':
 
-        b = Stack_for_numbers.top().value;
-        Stack_for_numbers.pop();
-
-        c = diff(a, b);
+        a = !a;
         item.type = '0';
-        item.value = c;
+        item.value = a;
         Stack_for_numbers.push(item);
         Stack_for_operations.pop();
         break;
        
-        case '*':
+        case '&':
 
         b = Stack_for_numbers.top().value;
         Stack_for_numbers.pop();
 
-        c = multi(a, b);
+        a &= b;
         item.type = '0';
-        item.value = c;
+        item.value = a;
         Stack_for_numbers.push(item);
         Stack_for_operations.pop();
         break;
 
-        case '/':
+        case '^':
 
         b = Stack_for_numbers.top().value;
         Stack_for_numbers.pop();
-        if (a != 0) {
-            c = divide(b, a);
-            item.type = '0';
-            item.value = c;
-            Stack_for_numbers.push(item);
-            Stack_for_operations.pop();
-            break; 
-        } else {
-            cout << "you are really dalbaeb..." << '\n';
-            return false;
-        }
+
+        a ^= b;
+        item.type = '0';
+        item.value = a;
+        Stack_for_numbers.push(item);
+        Stack_for_operations.pop();
+        break;
+
+        case '|':
+
+        b = Stack_for_numbers.top().value;
+        Stack_for_numbers.pop();
+
+        a |= b;
+        item.type = '0';
+        item.value = a;
+        Stack_for_numbers.push(item);
+        Stack_for_operations.pop();
+        break;
 
     }
     return true;
 }
 
 int main() {
-    double value;
+    int value;
     char Ch; 
     Leksema item; 
 
@@ -160,7 +116,7 @@ int main() {
                 continue;
         }
 
-        if (Ch == '+' || Ch == '-' || Ch == '*' || Ch == '/') {
+        if (Ch == '~' || Ch == '!' || Ch == '^' || Ch == '&' || Ch == '|') {
 
             if (Stack_for_operations.size() == 0) {
                 item.type = Ch;
@@ -185,7 +141,31 @@ int main() {
                 continue;
             }
         }
+
+        if (Ch == '(') {
+            item.type = Ch;
+            item.value = 0;
+            Stack_for_operations.push(item); 
+            cin.ignore();
+            continue;
+        }
+
+        if (Ch == ')') {
+
+            while (Stack_for_operations.top().type != '(') {
+                if (Maths(Stack_for_numbers, Stack_for_operations, item) == false) { 
+                    return 0;
+                } else {
+                    continue; 
+                }
+            }
+
+            Stack_for_operations.pop();
+            cin.ignore();
+            continue;
+        }
     }
+    
     while (Stack_for_operations.size() != 0) { 
         if (Maths(Stack_for_numbers, Stack_for_operations, item) == false) { 
             return 0;
