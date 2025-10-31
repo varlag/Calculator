@@ -4,12 +4,9 @@
 using namespace std; 
 
 struct Leksema {
-
     char type; 
-    double value; 
-
+    int value;  
 };
-
 
 long long getRang(char Ch) {
     if (Ch == '|') {
@@ -18,77 +15,41 @@ long long getRang(char Ch) {
         return 2;
     } else if (Ch == '&') {
         return 3;
-    } else if (Ch == '~' || Ch == '!') {
-        return 4;
     } else {
         return 0;
     }
-    
 }
 
-bool Maths(stack <Leksema> & Stack_for_numbers, stack <Leksema> & Stack_for_operations, Leksema& item) {
-
+bool Maths(stack<Leksema> &Stack_for_numbers, stack<Leksema> &Stack_for_operations, Leksema &item) {
     int a, b;
+    
+    if (Stack_for_numbers.size() < 2) {
+        return false;
+    }
+    
     a = Stack_for_numbers.top().value;
+    Stack_for_numbers.pop();
+    b = Stack_for_numbers.top().value;
     Stack_for_numbers.pop();
 
     switch(Stack_for_operations.top().type) {
-
-        case '~':
-
-        a = ~a;
-        item.type = '0';
-        item.value = a;
-        Stack_for_numbers.push(item);
-        Stack_for_operations.pop();
-        break;
-       
-        case '!':
-
-        a = !a;
-        item.type = '0';
-        item.value = a;
-        Stack_for_numbers.push(item);
-        Stack_for_operations.pop();
-        break;
-       
         case '&':
-
-        b = Stack_for_numbers.top().value;
-        Stack_for_numbers.pop();
-
-        a &= b;
-        item.type = '0';
-        item.value = a;
-        Stack_for_numbers.push(item);
-        Stack_for_operations.pop();
-        break;
-
+            a = b & a;
+            break;
         case '^':
-
-        b = Stack_for_numbers.top().value;
-        Stack_for_numbers.pop();
-
-        a ^= b;
-        item.type = '0';
-        item.value = a;
-        Stack_for_numbers.push(item);
-        Stack_for_operations.pop();
-        break;
-
+            a = b ^ a;
+            break;
         case '|':
-
-        b = Stack_for_numbers.top().value;
-        Stack_for_numbers.pop();
-
-        a |= b;
-        item.type = '0';
-        item.value = a;
-        Stack_for_numbers.push(item);
-        Stack_for_operations.pop();
-        break;
-
+            a = b | a;
+            break;
+        default:
+            return false;
     }
+    
+    item.type = '0';
+    item.value = a;
+    Stack_for_numbers.push(item);
+    Stack_for_operations.pop();
     return true;
 }
 
@@ -97,9 +58,8 @@ int main() {
     char Ch; 
     Leksema item; 
 
-    stack <Leksema> Stack_for_numbers; 
-    stack <Leksema> Stack_for_operations; 
-    
+    stack<Leksema> Stack_for_numbers; 
+    stack<Leksema> Stack_for_operations; 
 
     while (true) {
         Ch = cin.peek();
@@ -108,17 +68,44 @@ int main() {
             break;
         }
 
-        if (Ch >= '0' && Ch <= '9') {
-                cin >> value;
-                item.type = '0';
-                item.value = value;
-                Stack_for_numbers.push(item);
-                continue;
+        if (Ch == ' ') {
+            cin.ignore();
+            continue;
         }
 
-        if (Ch == '~' || Ch == '!' || Ch == '^' || Ch == '&' || Ch == '|') {
+        if (Ch >= '0' && Ch <= '9') {
+            cin >> value;
+            item.type = '0';
+            item.value = value;
+            Stack_for_numbers.push(item);
+            continue;
+        }
+        
+        if (Ch == '~' || Ch == '!') {
+            cin.ignore(); 
+            
+            while (cin.peek() == ' ') {
+                cin.ignore();
+            
+                if (cin.peek() >= '0' && cin.peek() <= '9') {
+                    cin >> value;
+                    
+                    if (Ch == '~') {
+                        value = ~value;
+                    } else if (Ch == '!') {
+                        value = !value;
+                    }
+                    
+                    item.type = '0';
+                    item.value = value;
+                    Stack_for_numbers.push(item);
+                }
+                continue;
+            }
+        }
 
-            if (Stack_for_operations.size() == 0) {
+        if (Ch == '^' || Ch == '&' || Ch == '|') {
+            if (Stack_for_operations.empty() || Stack_for_operations.top().type == '(') {
                 item.type = Ch;
                 item.value = 0;
                 Stack_for_operations.push(item);
@@ -126,7 +113,7 @@ int main() {
                 continue;
             } 
 
-            if (Stack_for_operations.size() != 0 && getRang(Ch) > getRang(Stack_for_operations.top().type)) { 
+            if (!Stack_for_operations.empty() && getRang(Ch) > getRang(Stack_for_operations.top().type)) { 
                 item.type = Ch;
                 item.value = 0;
                 Stack_for_operations.push(item); 
@@ -134,10 +121,16 @@ int main() {
                 continue;
             }
 
-            if (Stack_for_operations.size() != 0 && getRang(Ch) <= getRang(Stack_for_operations.top().type)) {
-                if (Maths(Stack_for_numbers, Stack_for_operations, item) == false) { 
+            if (!Stack_for_operations.empty() && getRang(Ch) <= getRang(Stack_for_operations.top().type)) {
+                if (!Maths(Stack_for_numbers, Stack_for_operations, item)) { 
+                    cout << "Ошибка в вычислениях!" << endl;
                     return 0;
                 }
+
+                item.type = Ch;
+                item.value = 0;
+                Stack_for_operations.push(item);
+                cin.ignore();
                 continue;
             }
         }
@@ -151,29 +144,32 @@ int main() {
         }
 
         if (Ch == ')') {
-
-            while (Stack_for_operations.top().type != '(') {
-                if (Maths(Stack_for_numbers, Stack_for_operations, item) == false) { 
+            while (!Stack_for_operations.empty() && Stack_for_operations.top().type != '(') {
+                if (!Maths(Stack_for_numbers, Stack_for_operations, item)) { 
+                    cout << "Некорректный ввод!" << endl;
                     return 0;
-                } else {
-                    continue; 
                 }
             }
-
-            Stack_for_operations.pop();
+            
+            Stack_for_operations.pop(); 
             cin.ignore();
             continue;
         }
+
+        cout << "Неизвестный символ: " << Ch << endl;
+        cin.ignore();
+
     }
-    
-    while (Stack_for_operations.size() != 0) { 
-        if (Maths(Stack_for_numbers, Stack_for_operations, item) == false) { 
+
+    while (!Stack_for_operations.empty()) { 
+        if (!Maths(Stack_for_numbers, Stack_for_operations, item)) { 
+            cout << "Некорректный ввод!" << endl;
             return 0;
-        } else {
-            continue; 
         }
     }
-    cout << Stack_for_numbers.top().value << endl; 
-    return 0;
     
+    if (!Stack_for_numbers.empty()) {
+        cout << "Результат: " << Stack_for_numbers.top().value << endl; 
+    } 
+    return 0;
 }
